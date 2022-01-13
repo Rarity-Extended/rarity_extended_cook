@@ -14,13 +14,23 @@ contract Meal is ERC721Enumerable, AccessControl {
     constructor(string memory _name, string memory _symbol, address extended, address _rarity) ERC721(_rarity) {
         name = _name;
         symbol = _symbol;
-        _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, extended);
+        _setupRole(MINTER_ROLE, msg.sender);
     }
 
     function mint(uint to) external onlyRole(MINTER_ROLE) {
         _safeMint(to, tokenIds);
         tokenIds++;
+    }
+
+    function getMealsBySummoner(uint256 summonerId) public view returns (uint[] memory) {
+        uint256 arrayLength = balanceOf(summonerId);
+        uint[] memory _meals = new uint[](arrayLength);
+        for (uint256 i = 0; i < arrayLength; i++) {
+            uint256 tokenId = tokenOfOwnerByIndex(summonerId, i);
+            _meals[i] = tokenId;
+        }
+        return _meals;
     }
 
 }

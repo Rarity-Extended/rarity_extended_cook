@@ -3,6 +3,7 @@ pragma solidity 0.8.0;
 
 import "./Meal.sol";
 import "./OnlyExtended.sol";
+import "./interfaces/IMeal.sol";
 import "./interfaces/IrERC20.sol";
 import "./interfaces/IrERC721.sol";
 
@@ -19,14 +20,21 @@ contract Cooking is OnlyExtended {
         uint[] quantities;
     }
 
+    struct MealBalance {
+        address meal;
+        uint[] balance;
+    }
+
     constructor (address _rm) {
         rm = _rm;
     }
 
     function createNewRecipe(string memory name, string memory symbol, string memory effect, address[] memory ingredients, uint[] memory quantities) external onlyExtended {
-        Meal meal = new Meal(name, symbol, msg.sender, rm);
-        recipes[address(meal)] = Recipe(name, effect, ingredients, quantities);
-        meals.push(address(meal));
+        require(ingredients.length == quantities.length, "!length");
+        Meal meal = new Meal(name, symbol, address(this), rm);
+        address newMealAddr = address(meal);
+        recipes[newMealAddr] = Recipe(name, effect, ingredients, quantities);
+        meals.push(newMealAddr);
     }
 
     function modifyRecipe(address mealAddr, Recipe memory newRecipe) external onlyExtended {
@@ -41,6 +49,17 @@ contract Cooking is OnlyExtended {
         }
 
         IrERC721(mealAddr).mint(chef);
+    }
+
+    function getTotalMealsBySummoner(uint256 summonerId) public view returns (MealBalance[] memory) {
+        MealBalance[] memory totalMeals = new MealBalance[](meals.length);
+
+        for (uint256 i = 0; i < meals.length; i++) {
+            uint[] memory _meals = IMeal(meals[i]).getMealsBySummoner(summonerId);
+            totalMeals[i] = MealBalance(meals[i], _meals);
+        }
+
+        return totalMeals;
     }
 
 }
