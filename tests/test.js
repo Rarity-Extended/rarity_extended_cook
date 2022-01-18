@@ -1,6 +1,11 @@
 const { expect } = require("chai");
 const {
-    rarityManifestedAddr
+    rarityManifestedAddr,
+    candiesAddr,
+    meatAddr,
+    mushroomAddr,
+    berriesAddr,
+    lootMinter
 } = require("../registry.json");
 
 describe("Cooking", function () {
@@ -20,18 +25,71 @@ describe("Cooking", function () {
             'function summon(uint _class) external',
             'function next_summoner() external view returns(uint)',
         ], this.user);
+
+        //Summon
+        this.summoner = await this.rarity.next_summoner();
+        await this.rarity.summon(1);
+
+        //Impersonate and mint
+        await hre.network.provider.request({
+            method: "hardhat_impersonateAccount",
+            params: [lootMinter],
+        });
+        this.lootMinterSigner = await ethers.getSigner(lootMinter);
+
+        this.loot = new ethers.Contract(meatAddr, [
+            'function mint(uint dst, uint amount) external',
+            'function setMinter(address _minter) external',
+            'function balanceOf(uint account) external view returns (uint)',
+            'function approve(uint from, uint spender, uint amount) external returns (bool)'
+        ], this.lootMinterSigner);
+
+        await this.loot.attach(meatAddr).connect(this.lootMinterSigner).setMinter(lootMinter);
+        await this.loot.attach(meatAddr).connect(this.lootMinterSigner).mint(this.summoner, 1000);
+        await this.loot.attach(mushroomAddr).connect(this.lootMinterSigner).setMinter(lootMinter);
+        await this.loot.attach(mushroomAddr).connect(this.lootMinterSigner).mint(this.summoner, 1000);
+
+        //rERC721
+        this.rERC721 = new ethers.Contract(ethers.constants.AddressZero, [
+            'function balanceOf(uint owner) external view returns (uint balance)',
+        ], this.user);
     });
 
     it("Should create new recipe...", async function () {
+        let name = "My new recipe";
+        let symbol = "MNR";
+        let effect = "It does amazing things in your body";
+        let ingredients = [meatAddr, mushroomAddr];
+        let quantities = [20, 10];
+        await this.cooking.createNewRecipe(name, symbol, effect, ingredients, quantities);
 
-    });
-
-    it("Should modify a recipe...", async function () {
-
+        let recipe = await this.cooking.getRecipeByMealName(name);
+        expect(recipe.effect).equal(effect);
     });
 
     it("Should cook...", async function () {
+        let mealAddr = await this.cooking.getMealAddressByMealName("My new recipe");
+        let summonerCook = await this.cooking.summonerCook();
+        await this.loot.attach(meatAddr).connect(this.user).approve(this.summoner, summonerCook, ethers.constants.MaxUint256);
+        await this.loot.attach(mushroomAddr).connect(this.user).approve(this.summoner, summonerCook, ethers.constants.MaxUint256);
+        await this.rarity.approve(this.cooking.address, this.summoner);
+        await this.cooking.cook(mealAddr, this.summoner);
 
+        expect(await this.rERC721.attach(mealAddr).balanceOf(this.summoner)).equal(1);
+    });
+
+    it("Should modify a recipe...", async function () {
+        let mealAddr = await this.cooking.getMealAddressByMealName("My new recipe");
+        let modifiedRecipe = {
+            name: "Another good recipe",
+            effect: "AGR",
+            ingredients: [candiesAddr],
+            quantities: [10]
+        };
+        await this.cooking.modifyRecipe(mealAddr, modifiedRecipe);
+
+        let recipe = await this.cooking.getRecipeByMealName(modifiedRecipe.name);
+        expect(recipe.effect).equal(modifiedRecipe.effect);
     });
 
 });
