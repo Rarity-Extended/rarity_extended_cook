@@ -173,4 +173,17 @@ contract Cooking is OnlyExtended {
         return allRecipes;
     }
 
+    /**********************************************************************************************
+    **  @dev Get an array of all meal recipes
+    **  @return an array of Recipe structs
+    **********************************************************************************************/
+    function getRecipe(address meal) public view returns (string memory, string memory, address[] memory, uint[] memory) {
+        return (
+            recipesByAddress[meal].name,
+            recipesByAddress[meal].effect,
+            recipesByAddress[meal].ingredients,
+            recipesByAddress[meal].quantities
+        );
+    }
+
 }
