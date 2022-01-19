@@ -24,6 +24,7 @@ contract Cooking is OnlyExtended {
     event executedMealSwitch(address mealAddr, bool formerStatus, bool currentStatus);
 
     struct Recipe {
+        uint index;
         bool isPaused;
         string name;
         string effect;
@@ -64,8 +65,8 @@ contract Cooking is OnlyExtended {
 
         Meal meal = new Meal(name, symbol, address(this), rm);
         address newMealAddr = address(meal);
-        recipesByAddress[newMealAddr] = Recipe(false, name, effect, ingredients, quantities);
-        recipesByIndex[nonce] = Recipe(false, name, effect, ingredients, quantities);
+        recipesByAddress[newMealAddr] = Recipe(nonce, false, name, effect, ingredients, quantities);
+        recipesByIndex[nonce] = Recipe(nonce, false, name, effect, ingredients, quantities);
         recipeAddressesByIndex[nonce] = newMealAddr;
         meals.push(newMealAddr);
         nonce += 1;
@@ -80,7 +81,9 @@ contract Cooking is OnlyExtended {
     **	@param newRecipe: Struct of the new recipe.
     **********************************************************************************************/
     function modifyRecipe(address mealAddr, Recipe memory newRecipe) external onlyExtended {
+        require(recipeAddressesByIndex[newRecipe.index] == mealAddr, "!recipeIndex"); //You're messing up the indices
         recipesByAddress[mealAddr] = newRecipe;
+        recipesByIndex[newRecipe.index] = newRecipe;
         emit modifiedRecipe(mealAddr);
     }
 
@@ -114,6 +117,8 @@ contract Cooking is OnlyExtended {
     function cook(address mealAddr, uint adventurer) external {
         Recipe memory recipe = recipesByAddress[mealAddr];
 
+        require(recipe.isPaused == false, "isPaused");
+
         for (uint i = 0; i < recipe.ingredients.length; i++) {
             IrERC20(recipe.ingredients[i])
                 .transferFrom(summonerCook, adventurer, summonerCook, recipe.quantities[i]);
@@ -123,6 +128,8 @@ contract Cooking is OnlyExtended {
     }
     function cook(address mealAddr, uint adventurer, uint receiver) external {
         Recipe memory recipe = recipesByAddress[mealAddr];
+
+        require(recipe.isPaused == false, "isPaused");
 
         for (uint i = 0; i < recipe.ingredients.length; i++) {
             IrERC20(recipe.ingredients[i])
