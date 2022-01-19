@@ -21,8 +21,10 @@ contract Cooking is OnlyExtended {
     event createdNewRecipe(address addr, string name, string symbol, string effect, address[] ingredients, uint[] quantities);
     event modifiedRecipe(address mealAddr);
     event cooked(address mealAddr, uint chef);
+    event executedMealSwitch(address mealAddr, bool formerStatus, bool currentStatus);
 
     struct Recipe {
+        bool isPaused;
         string name;
         string effect;
         address[] ingredients;
@@ -36,8 +38,8 @@ contract Cooking is OnlyExtended {
 
     constructor (address _rm) {
         rm = _rm;
-        summonerCook = IRarity(rm).next_summoner();
-        IRarity(rm).summon(8);
+        summonerCook = IRarity(_rm).next_summoner();
+        IRarity(_rm).summon(8);
     }
 
     /**********************************************************************************************
@@ -62,8 +64,8 @@ contract Cooking is OnlyExtended {
 
         Meal meal = new Meal(name, symbol, address(this), rm);
         address newMealAddr = address(meal);
-        recipesByAddress[newMealAddr] = Recipe(name, effect, ingredients, quantities);
-        recipesByIndex[nonce] = Recipe(name, effect, ingredients, quantities);
+        recipesByAddress[newMealAddr] = Recipe(false, name, effect, ingredients, quantities);
+        recipesByIndex[nonce] = Recipe(false, name, effect, ingredients, quantities);
         recipeAddressesByIndex[nonce] = newMealAddr;
         meals.push(newMealAddr);
         nonce += 1;
@@ -72,9 +74,31 @@ contract Cooking is OnlyExtended {
         return newMealAddr;
     }
 
+    /**********************************************************************************************
+    **  @dev Modify a existing recipe
+    **	@param mealAddr: Address of the meal contract to modify.
+    **	@param newRecipe: Struct of the new recipe.
+    **********************************************************************************************/
     function modifyRecipe(address mealAddr, Recipe memory newRecipe) external onlyExtended {
         recipesByAddress[mealAddr] = newRecipe;
         emit modifiedRecipe(mealAddr);
+    }
+
+    /**********************************************************************************************
+    **  @dev Pause or unpause a meal
+    **	@param mealAddr: Address of the meal contract to pause.
+    **********************************************************************************************/
+    function pauseMealSwitch(address mealAddr) external onlyExtended {
+        Recipe memory meal = recipesByAddress[mealAddr];
+        if (meal.isPaused) {
+            //Is paused, unpause
+            meal.isPaused = false;
+        }else{
+            //Not paused, pause
+            meal.isPaused = true;
+        }
+        recipesByAddress[mealAddr] = meal;
+        emit executedMealSwitch(mealAddr, !meal.isPaused, meal.isPaused);
     }
 
     /**********************************************************************************************
@@ -83,7 +107,7 @@ contract Cooking is OnlyExtended {
     **  contract forever.
     **  An optional receiver uint can be provided. If provided, the meal is sent to this uint
     **  instead.
-    **	@param mealAddr: Address of the mean contract.
+    **	@param mealAddr: Address of the meal contract.
     **	@param adventurer: Adventurer asking to cook the meal.
     **	@param receiver: Adventurer receiving the cooked meal.
     **********************************************************************************************/
@@ -123,6 +147,30 @@ contract Cooking is OnlyExtended {
         }
 
         return totalMeals;
+    }
+
+    /**********************************************************************************************
+    **  @dev Get an array of all meals address
+    **  @return an array of address
+    **********************************************************************************************/
+    function getAllMealsAddress() public view returns (address[] memory) {
+        address[] memory allMeals = new address[](nonce);
+        for (uint256 i = 0; i < nonce; i++) {
+            allMeals[i] = recipeAddressesByIndex[i];
+        }
+        return allMeals;
+    }
+
+    /**********************************************************************************************
+    **  @dev Get an array of all meal recipes
+    **  @return an array of Recipe structs
+    **********************************************************************************************/
+    function getAllRecipes() public view returns (Recipe[] memory) {
+        Recipe[] memory allRecipes = new Recipe[](nonce);
+        for (uint256 i = 0; i < nonce; i++) {
+            allRecipes[i] = recipesByIndex[i];
+        }
+        return allRecipes;
     }
 
 }
