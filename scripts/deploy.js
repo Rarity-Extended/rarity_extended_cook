@@ -1,3 +1,7 @@
+const {
+    rarityManifestedAddr
+} = require("../registry.json");
+
 async function main() {
     //Compile
     await hre.run("clean");
@@ -5,8 +9,8 @@ async function main() {
 
     //Deploy
     this.Contract = await ethers.getContractFactory("Cooking");
-    this.Contract = await this.Contract.deploy('0xce761D788DF608BD21bdd59d6f4B54b2e27F25Bb');
-    console.log("Deployed to:", this.Contract.address);
+    this.contract = await this.Contract.deploy(rarityManifestedAddr);
+    console.log("Deployed to:", this.contract.address);
 
     //TEST
 
@@ -25,17 +29,15 @@ async function main() {
     // let ingredients = [Gold, Meat];
     // let quantities = [10, 10];
     // await (await this.Contract.createNewRecipe(name, symbol, effect, ingredients, quantities)).wait();
-    // let recipe = await this.Contract.getMealAddressByMealName(name);
+    // let recipe = await this.contract.getMealAddressByMealName(name);
     // console.log(recipe);
 
-    // let cook = await this.Contract.summonerCook();
+    // let cook = await this.contract.summonerCook();
     // console.log(Number(cook));
 
-
-
-    Verify
+    //Verify
     await hre.run("verify:verify", {
-        address: this.Contract.address,
+        address: this.contract.address,
         constructorArguments: [],
     });
 

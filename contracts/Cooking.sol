@@ -10,10 +10,13 @@ import "./interfaces/IrERC721.sol";
 
 contract Cooking is OnlyExtended {
 
-    address private rm;
-    mapping(address => Recipe) public recipes;
-    address[] public meals;
+    uint public nonce = 1;
     uint public summonerCook;
+    address private rm;
+    address[] public meals;
+    mapping(address => Recipe) public recipesByAddress;
+    mapping(uint => address) public recipeAddressesByIndex;
+    mapping(uint => Recipe) public recipesByIndex;
 
     event createdNewRecipe(address addr, string name, string symbol, string effect, address[] ingredients, uint[] quantities);
     event modifiedRecipe(address mealAddr);
@@ -59,13 +62,18 @@ contract Cooking is OnlyExtended {
 
         Meal meal = new Meal(name, symbol, address(this), rm);
         address newMealAddr = address(meal);
-        recipes[newMealAddr] = Recipe(name, effect, ingredients, quantities);
+        recipesByAddress[newMealAddr] = Recipe(name, effect, ingredients, quantities);
+        recipesByIndex[nonce] = Recipe(name, effect, ingredients, quantities);
+        recipeAddressesByIndex[nonce] = newMealAddr;
         meals.push(newMealAddr);
+        nonce += 1;
+
         emit createdNewRecipe(newMealAddr, name, symbol, effect, ingredients, quantities);
+        return newMealAddr;
     }
 
     function modifyRecipe(address mealAddr, Recipe memory newRecipe) external onlyExtended {
-        recipes[mealAddr] = newRecipe;
+        recipesByAddress[mealAddr] = newRecipe;
         emit modifiedRecipe(mealAddr);
     }
 
@@ -80,9 +88,9 @@ contract Cooking is OnlyExtended {
     **	@param receiver: Adventurer receiving the cooked meal.
     **********************************************************************************************/
     function cook(address mealAddr, uint adventurer) external {
-        Recipe memory recipe = recipes[mealAddr];
+        Recipe memory recipe = recipesByAddress[mealAddr];
 
-        for (uint256 i = 0; i < recipe.ingredients.length; i++) {
+        for (uint i = 0; i < recipe.ingredients.length; i++) {
             IrERC20(recipe.ingredients[i])
                 .transferFrom(summonerCook, adventurer, summonerCook, recipe.quantities[i]);
         }
@@ -90,9 +98,9 @@ contract Cooking is OnlyExtended {
         emit cooked(mealAddr, adventurer);
     }
     function cook(address mealAddr, uint adventurer, uint receiver) external {
-        Recipe memory recipe = recipes[mealAddr];
+        Recipe memory recipe = recipesByAddress[mealAddr];
 
-        for (uint256 i = 0; i < recipe.ingredients.length; i++) {
+        for (uint i = 0; i < recipe.ingredients.length; i++) {
             IrERC20(recipe.ingredients[i])
                 .transferFrom(summonerCook, adventurer, summonerCook, recipe.quantities[i]);
         }
@@ -106,49 +114,15 @@ contract Cooking is OnlyExtended {
     **	@param summonerId: tokenID of the adventurer to check
     **  @return a MealBalance array
     **********************************************************************************************/
-    function getTotalMealsBySummoner(uint256 summonerId) public view returns (MealBalance[] memory) {
+    function getTotalMealsBySummoner(uint summonerId) public view returns (MealBalance[] memory) {
         MealBalance[] memory totalMeals = new MealBalance[](meals.length);
 
-        for (uint256 i = 0; i < meals.length; i++) {
+        for (uint i = 0; i < meals.length; i++) {
             uint[] memory _meals = IMeal(meals[i]).getMealsBySummoner(summonerId);
             totalMeals[i] = MealBalance(meals[i], _meals);
         }
 
         return totalMeals;
-    }
-
-    /**********************************************************************************************
-    **  @dev Try to retrieve a recipe based on the meal name.
-    **	@param name: Name of the meal
-    **  @return the recipe of this meal
-    **********************************************************************************************/
-    function getRecipeByMealName(string memory name) external view returns (Recipe memory) {
-        for (uint256 i = 0; i < meals.length; i++) {
-            Recipe memory current = recipes[meals[i]];
-            if (keccak256(abi.encodePacked(name)) == keccak256(abi.encodePacked(current.name))) {
-                return current;
-            }
-        }
-
-        address[] memory emptyIngredients = new address[](0);
-        uint[] memory emptyQuantities = new uint[](0);
-        return Recipe("", "", emptyIngredients, emptyQuantities);
-    }
-
-    /**********************************************************************************************
-    **  @dev Try to retrieve a meal address based on the meal name.
-    **	@param name: Name of the meal
-    **  @return the address of the meal contract
-    **********************************************************************************************/
-    function getMealAddressByMealName(string memory name) external view returns (address) {
-        for (uint256 i = 0; i < meals.length; i++) {
-            Recipe memory current = recipes[meals[i]];
-            if (keccak256(abi.encodePacked(name)) == keccak256(abi.encodePacked(current.name))) {
-                return meals[i];
-            }
-        }
-
-        return address(0);
     }
 
 }
