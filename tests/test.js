@@ -73,7 +73,7 @@ describe("Cooking", function () {
         await this.loot.attach(meatAddr).connect(this.user).approve(this.summoner, summonerCook, ethers.constants.MaxUint256);
         await this.loot.attach(mushroomAddr).connect(this.user).approve(this.summoner, summonerCook, ethers.constants.MaxUint256);
         await this.rarity.approve(this.cooking.address, this.summoner);
-        await this.cooking.cook(mealAddr, this.summoner);
+        await this.cooking['cook(address,uint256)'](mealAddr, this.summoner);
 
         expect(await this.rERC721.attach(mealAddr).balanceOf(this.summoner)).equal(1);
     });
