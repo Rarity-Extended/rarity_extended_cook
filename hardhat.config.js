@@ -10,20 +10,24 @@ require("dotenv").config();
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const ANOTHER_PRIVATE_KEY = process.env.ANOTHER_PRIVATE_KEY;
+const FTM_KEY = process.env.FTM_KEY;
 if (!process.env.PRIVATE_KEY) {
   throw new Error("ENV Variable PRIVATE_KEY not set!");
 }
 if (!process.env.ANOTHER_PRIVATE_KEY) {
   throw new Error("ENV Variable ANOTHER_PRIVATE_KEY not set!");
 }
+if (!process.env.FTM_KEY) {
+  throw new Error("ENV Variable FTM_KEY not set!");
+}
 
 module.exports = {
   solidity: {
-    version: '0.8.0',
+    version: '0.8.11',
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 800,
       }
     }
   },
@@ -45,5 +49,8 @@ module.exports = {
       url: 'https://rpc.ftm.tools',
       accounts: [PRIVATE_KEY, ANOTHER_PRIVATE_KEY]
     }
+  },
+  etherscan: {
+    apiKey: FTM_KEY
   }
 }
