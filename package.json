@@ -7,7 +7,7 @@
     "@nomiclabs/hardhat-ganache": "^2.0.1",
     "@nomiclabs/hardhat-truffle5": "^2.0.3",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^4.4.2",
+    "@openzeppelin/contracts": "^4.4.1",
     "dotenv": "^12.0.3",
     "ganache-cli": "^6.12.2",
     "hardhat-deploy": "^0.9.24",

@@ -3,3 +3,5 @@ artifacts
 .vscode
 cache
 .env
+build
+__pycache__
