@@ -1,5 +1,5 @@
 import time
-from brownie import Cooking, accounts
+from brownie import Cooking, Contract, accounts
 from ape_safe import ApeSafe
 
 RARITY_MANIFEST = '0xce761D788DF608BD21bdd59d6f4B54b2e27F25Bb'
@@ -33,12 +33,12 @@ def deployWithDev():
 	Cooking.publish_source(cooking)
 
 	recipes = [
-		("Grilled Meat", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MEAT], [10, 10]),
-		("Mushroom soup", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MUSHROOM], [10, 10]),
-		("Berries pie", [RARITY_GOLD, RARITY_EXTENDED_LOOT_BERRIES], [10, 10]),
-		("Mushroom and Meat Skewer", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MEAT, RARITY_EXTENDED_LOOT_MUSHROOM], [10, 10, 10]),
-		("Mushroom and Berries Mix", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MUSHROOM, RARITY_EXTENDED_LOOT_BERRIES], [10, 10, 10]),
-		("Berries Wine", [RARITY_GOLD, RARITY_EXTENDED_LOOT_BERRIES], [50, 100]),
+		("Grilled Meat", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MEAT], [10e18, 10]),
+		("Mushroom soup", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MUSHROOM], [10e18, 10]),
+		("Berries pie", [RARITY_GOLD, RARITY_EXTENDED_LOOT_BERRIES], [10e18, 10]),
+		("Mushroom and Meat Skewer", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MEAT, RARITY_EXTENDED_LOOT_MUSHROOM], [10e18, 10, 10]),
+		("Mushroom and Berries Mix", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MUSHROOM, RARITY_EXTENDED_LOOT_BERRIES], [10e18, 10, 10]),
+		("Berries Wine", [RARITY_GOLD, RARITY_EXTENDED_LOOT_BERRIES], [50e18, 100]),
 	]
 
 	for (name, ingredients, quantities) in recipes:
@@ -52,5 +52,33 @@ def deployWithDev():
 		)
 		time.sleep(5)
 
+def ModifyRecipes():
+	deployer = accounts.load('rarityextended')
+	cooking = Contract.from_explorer('0x7474002fe5640d612c9a76cb0b6857932ff891e8')
+
+	recipes = [
+		("0x97e8f1061224cb532f808b074786c76e977ba6ee", 1, False, "Grilled Meat", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MEAT], [10e18, 10]),
+		("0x2e3e1C1F49A288ebF88be66a3ED3539B5971f25D", 2, False, "Mushroom Soup", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MUSHROOM], [10e18, 10]),
+		("0x57e4cd55289da26aa7cb607c00c5ddcd0f7980a2", 3, False, "Berries Pie", [RARITY_GOLD, RARITY_EXTENDED_LOOT_BERRIES], [10e18, 10]),
+		("0x65567a2fbc14b4abcd414bb6902384745d4353f6", 4, False, "Mushroom and Meat Skewer", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MEAT, RARITY_EXTENDED_LOOT_MUSHROOM], [10e18, 10, 10]),
+		("0xf06ffe67cb96641eec55ea19126bd8f0107ff0ad", 5, False, "Mushroom and Berries Mix", [RARITY_GOLD, RARITY_EXTENDED_LOOT_MUSHROOM, RARITY_EXTENDED_LOOT_BERRIES], [10e18, 10, 10]),
+		("0xa0e9159efc4407c4465bbcdf0e7538d6869d81a3", 6, False, "Berries Wine", [RARITY_GOLD, RARITY_EXTENDED_LOOT_BERRIES], [50e18, 100]),
+	]
+
+	for (address, index, paused,name, ingredients, quantities) in recipes:
+		cooking.modifyRecipe(
+			address, (
+				index,
+				paused,
+				name,
+				'',
+				ingredients,
+				quantities,
+			),
+			{"from": deployer}
+		)
+		time.sleep(5)
+
+
 def main():
-	deployWithDev()
+	ModifyRecipes()
